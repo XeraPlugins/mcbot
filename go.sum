@@ -1,0 +1,4 @@
+github.com/Tnze/go-mc v1.20.3-0.20241224032005-539b4a3a7f03 h1:DTfuZLjn/C0Q7IWk6+vTbMUlCjHyGGS48YeU7GlxoV4=
+github.com/Tnze/go-mc v1.20.3-0.20241224032005-539b4a3a7f03/go.mod h1:vp949nHNUK5KVwSuadpN1vp7c1zvkPEniM08PQv1FcY=
+github.com/google/uuid v1.3.0 h1:t6JiXgmwXMjEs8VusXIJk2BXHsn+wx8BZdTaoZ5fu7I=
+github.com/google/uuid v1.3.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=

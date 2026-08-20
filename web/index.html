@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mcbot - Minecraft stress test</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --panel: #171a23;
+    --border: #2a2e3d;
+    --text: #e6e8ee;
+    --muted: #8b91a3;
+    --accent: #4f8cff;
+    --good: #4cd07d;
+    --bad: #ff6b6b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  header h1 { font-size: 18px; margin: 0; }
+  header .status {
+    margin-left: auto;
+    font-size: 13px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+  }
+  .status.running { color: var(--good); border-color: var(--good); }
+  .status.idle { color: var(--muted); }
+  main {
+    max-width: 980px;
+    margin: 24px auto;
+    padding: 0 16px;
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 760px) { main { grid-template-columns: 1fr; } }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .panel h2 { font-size: 14px; margin: 0 0 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin: 10px 0 4px;
+  }
+  input[type=text], input[type=number], input[type=password] {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 7px 9px;
+    font-size: 14px;
+  }
+  .row { display: flex; gap: 8px; }
+  .row > div { flex: 1; }
+  .check { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 13px; color: var(--text); }
+  .check input { width: auto; }
+  .actions { display: flex; gap: 8px; margin-top: 16px; }
+  button {
+    flex: 1;
+    padding: 9px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    color: #fff;
+  }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  #startBtn { background: var(--good); }
+  #stopBtn { background: var(--bad); }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .stat {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+  }
+  .stat .val { font-size: 22px; font-weight: 700; }
+  .stat .lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  #topErrs { margin-top: 14px; font-size: 12px; color: var(--bad); }
+  #elapsed { margin-top: 12px; font-size: 13px; color: var(--muted); }
+  pre { white-space: pre-wrap; font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>mcbot</h1>
+  <span id="status" class="status idle">idle</span>
+</header>
+<main>
+  <section class="panel">
+    <h2>Configuration</h2>
+    <label>Server address</label>
+    <input type="text" id="address" value="127.0.0.1:25565">
+
+    <div class="row">
+      <div>
+        <label>Bots</label>
+        <input type="number" id="bots" value="100" min="1">
+      </div>
+      <div>
+        <label>Rate (bots/sec)</label>
+        <input type="number" id="rate" value="20" min="0">
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label>Stagger (ms, overrides rate)</label>
+        <input type="number" id="stagger" value="0" min="0">
+      </div>
+      <div>
+        <label>Duration (sec, 0 = forever)</label>
+        <input type="number" id="duration" value="0" min="0">
+      </div>
+    </div>
+
+    <label>Name prefix (empty = realistic names)</label>
+    <input type="text" id="prefix" value="">
+
+    <div class="row">
+      <div>
+        <label>Auth user</label>
+        <input type="text" id="user" value="User7364">
+      </div>
+      <div>
+        <label>Auth pass</label>
+        <input type="text" id="pass" value="User7364">
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label>Movement tick (ms)</label>
+        <input type="number" id="tick" value="50" min="10">
+      </div>
+      <div>
+        <label>Radius (blocks)</label>
+        <input type="number" id="radius" value="10" min="0">
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label>Join timeout (sec)</label>
+        <input type="number" id="joinTimeout" value="30" min="1">
+      </div>
+      <div>
+        <label>Reconnect (sec, 0 = off)</label>
+        <input type="number" id="reconnect" value="0" min="0">
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label>Max reconnects (0 = unlimited)</label>
+        <input type="number" id="maxReconnects" value="0" min="0">
+      </div>
+      <div>
+        <label>Auth delay (ms)</label>
+        <input type="number" id="authDelay" value="500" min="0">
+      </div>
+    </div>
+
+    <label>Names file (optional)</label>
+    <input type="text" id="namesFile" value="" placeholder="names.txt">
+
+    <label class="check"><input type="checkbox" id="move" checked> Move around</label>
+    <label class="check"><input type="checkbox" id="register" checked> Register on first login (/cracked + /register)</label>
+    <label class="check"><input type="checkbox" id="decorate"> Decorate: make server look populated (bots stay online, idle)</label>
+    <label class="check"><input type="checkbox" id="hide"> Hide bots above the world (with Decorate)</label>
+
+    <div class="actions">
+      <button id="startBtn">Start</button>
+      <button id="stopBtn" disabled>Stop</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Live stats</h2>
+    <div class="stats-grid">
+      <div class="stat"><div class="val" id="sActive">0</div><div class="lbl">in-game</div></div>
+      <div class="stat"><div class="val" id="sConnected">0</div><div class="lbl">joined</div></div>
+      <div class="stat"><div class="val" id="sFailed">0</div><div class="lbl">failed</div></div>
+      <div class="stat"><div class="val" id="sAttempts">0</div><div class="lbl">attempts</div></div>
+      <div class="stat"><div class="val" id="sDropped">0</div><div class="lbl">dropped</div></div>
+      <div class="stat"><div class="val" id="sSuccess">0%</div><div class="lbl">success</div></div>
+    </div>
+    <div id="elapsed">elapsed: 0s</div>
+    <div id="topErrs"></div>
+  </section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function collect() {
+  return {
+    address: $('address').value,
+    bots: +$('bots').value,
+    rate: +$('rate').value,
+    stagger: +$('stagger').value,
+    duration: +$('duration').value,
+    prefix: $('prefix').value,
+    user: $('user').value,
+    pass: $('pass').value,
+    tick: +$('tick').value,
+    radius: +$('radius').value,
+    joinTimeout: +$('joinTimeout').value,
+    reconnect: +$('reconnect').value,
+    maxReconnects: +$('maxReconnects').value,
+    authDelay: +$('authDelay').value,
+    namesFile: $('namesFile').value,
+    move: $('move').checked,
+    register: $('register').checked,
+    decorate: $('decorate').checked,
+    hide: $('hide').checked,
+  };
+}
+
+async function api(path, body) {
+  const res = await fetch(path, {
+    method: body ? 'POST' : 'GET',
+    headers: body ? {'Content-Type': 'application/json'} : undefined,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) throw new Error((await res.text()) || res.statusText);
+  return res.json();
+}
+
+async function poll() {
+  try {
+    const s = await api('/api/stats');
+    $('sActive').textContent = s.active;
+    $('sConnected').textContent = s.connected;
+    $('sFailed').textContent = s.failures;
+    $('sAttempts').textContent = s.attempts;
+    $('sDropped').textContent = s.dropped;
+    $('sSuccess').textContent = s.successPct.toFixed(1) + '%';
+    $('elapsed').textContent = 'elapsed: ' + s.elapsed + (s.address ? ' @ ' + s.address : '');
+    $('topErrs').textContent = (s.topErrs && s.topErrs.length) ? 'top errors: ' + s.topErrs.join(', ') : '';
+    setRunning(s.running);
+  } catch (e) {
+    $('topErrs').textContent = 'poll error: ' + e.message;
+  }
+}
+
+function setRunning(running) {
+  $('status').textContent = running ? 'running' : 'idle';
+  $('status').className = 'status ' + (running ? 'running' : 'idle');
+  $('startBtn').disabled = running;
+  $('stopBtn').disabled = !running;
+}
+
+$('startBtn').onclick = async () => {
+  try {
+    await api('/api/start', collect());
+    poll();
+  } catch (e) {
+    $('topErrs').textContent = 'start failed: ' + e.message;
+  }
+};
+
+$('stopBtn').onclick = async () => {
+  try { await api('/api/stop'); poll(); } catch (e) { /* ignore */ }
+};
+
+poll();
+setInterval(poll, 1000);
+</script>
+</body>
+</html>
